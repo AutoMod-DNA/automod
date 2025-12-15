@@ -22,8 +22,8 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.parameters = {"ihg": 0.5, "hd": 2.0, "ntl": 0.34, "ml": 0.21, "tl": 10.5, "gs": 20, "mods": True, "cos": True, "sl": True, "seed": 0,
-                           "zs": 1, "ts": 1, "rs": 1, "grid": True, "min_d": 8, "buffer": 5, "tt_max": 3.1, 'rho_start': 0.060, "margin_over": 0.005, "margin_under": 0.005}
+        self.parameters = {"ihg": 0.5, "hd": 2.0, "ntl": 0.340, "ml": 0.22, "tl": 10.50, "gs": 20, "mods": True, "cos": True, "sl": True, "seed": 0,
+                           "zs": 1, "ts": 1, "rs": 1, "grid": True, "min_d": 6, "buffer": 6, "tt_max": 3.1, 'rho_start': 0.070, "margin_over": 0.005, "margin_under": 0.005}
 
         self.scene = CurveScene(8 * self.parameters['gs'], self.parameters['gs'], parent=self)
         self.scene.setBackgroundBrush(QBrush(Qt.GlobalColor.white))
@@ -630,7 +630,8 @@ class MainWindow(QMainWindow):
         parameter_layout.addWidget(QLabel("Rise per base pair:"), 4, 0)
         nucleotide_length_value = QDoubleSpinBox()
         nucleotide_length_value.setSuffix(" nm")
-        nucleotide_length_value.setSingleStep(0.01)
+        nucleotide_length_value.setSingleStep(0.001)
+        nucleotide_length_value.setDecimals(3)
         nucleotide_length_value.setValue(self.parameters["ntl"])
         nucleotide_length_value.valueChanged.connect(self.spin_nucleotide_length_action)
         parameter_layout.addWidget(nucleotide_length_value, 5, 0)
@@ -638,8 +639,8 @@ class MainWindow(QMainWindow):
         parameter_layout.addWidget(QLabel("Base pairs per turn:"), 6, 0)
         turn_length_value = QDoubleSpinBox()
         turn_length_value.setSuffix(" bp")
-        turn_length_value.setSingleStep(0.1)
-        turn_length_value.setDecimals(1)
+        turn_length_value.setSingleStep(0.01)
+        turn_length_value.setDecimals(2)
         turn_length_value.setValue(self.parameters["tl"])
         turn_length_value.valueChanged.connect(self.spin_turn_length_action)
         parameter_layout.addWidget(turn_length_value, 7, 0)
@@ -882,8 +883,12 @@ class MainWindow(QMainWindow):
                     for helix, d_rad in twist_dict[helix1][j].items():
                         place = False
                         if d_rad[0] < tolerance and helix == helix2:
-                            if np.count_nonzero(adjacency_check[ind1, max(0, j-min_d-2):min(adjacency_check.shape[1]-1, j+min_d-1)]) == 0:
-                                if np.count_nonzero(adjacency_check[ind2, max(0, j-min_d-2):min(adjacency_check.shape[1]-1, j+min_d-1)]) == 0:
+                            ld_1b = int(min_d - np.sum(mods[helix1][0, max(0, j-min_d-1):j]))
+                            ld_1f = int(min_d - np.sum(mods[helix1][0, j:min(mods[helix1].shape[1]-1, j+min_d+1)]))
+                            ld_2b = int(min_d - np.sum(mods[helix2][0, max(0, j-min_d-1):j]))
+                            ld_2f = int(min_d - np.sum(mods[helix2][0, j:min(mods[helix2].shape[1]-1, j+min_d+1)]))
+                            if np.count_nonzero(adjacency_check[ind1, max(0, j-ld_1b-1):min(adjacency_check.shape[1]-1, j+ld_1f+1)]) == 0:
+                                if np.count_nonzero(adjacency_check[ind2, max(0, j-ld_2b-1):min(adjacency_check.shape[1]-1, j+ld_2f+1)]) == 0:
                                     if np.flatnonzero(adjacency_check[ind1, :]).size == 0:
                                         place = True
                                     elif np.flatnonzero(adjacency_check[ind1, 0:j]).size != 0 and np.flatnonzero(adjacency_check[ind1, j+1:-1]).size == 0:
@@ -945,10 +950,14 @@ class MainWindow(QMainWindow):
                 for j in pos_lst:
                     for helix, d_rad in twist_dict[helix1][j].items():
                         if d_rad[0] < tolerance and helix == helix2:
-                            if np.count_nonzero(adjacency_check[ind1, max(0, j-min_d-2):min(adjacency_check.shape[1]-1, j+min_d-1)]) == 0:
+                            ld_1b = int(min_d - np.sum(mods[helix1][0, max(0, j-min_d-1):j]))
+                            ld_1f = int(min_d - np.sum(mods[helix1][0, j:min(mods[helix1].shape[1]-1, j+min_d+1)]))
+                            ld_2b = int(min_d - np.sum(mods[helix2][0, max(0, j-min_d-1):j]))
+                            ld_2f = int(min_d - np.sum(mods[helix2][0, j:min(mods[helix2].shape[1]-1, j+min_d+1)]))
+                            if np.count_nonzero(adjacency_check[ind1, max(0, j-ld_1b-1):min(adjacency_check.shape[1]-1, j+ld_1f+1)]) == 0:
                                 c1 = np.count_nonzero(adjacency_check[ind1, :]) / (len(adjacency_check[ind1, :])+np.sum(mods[helix1])) < rho_target + margin_over
                                 c2 = np.count_nonzero(adjacency_check[ind2, :]) / (len(adjacency_check[ind2, :])+np.sum(mods[helix2])) < rho_target + margin_over
-                                if np.count_nonzero(adjacency_check[ind2, max(0, j-min_d-2):min(adjacency_check.shape[1]-1, j+min_d-1)]) == 0 and c1 and c2:
+                                if np.count_nonzero(adjacency_check[ind2, max(0, j-ld_2b-1):min(adjacency_check.shape[1]-1, j+ld_2f+1)]) == 0 and c1 and c2:
                                     co_counts_matrix[ind1, ind2] += 1
                                     co_counts_matrix[ind2, ind1] += 1
                                     adjacency_check[ind1, j] = helix2 + 1
