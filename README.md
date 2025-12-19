@@ -8,3 +8,9 @@ AutoMod is available via the Python Package Index ([PyPI](https://pypi.org/)).
 ```bash
 python3 -m pip install automod
 ```
+
+After installation, lauch with:
+
+```bash
+automod
+```
