@@ -84,20 +84,20 @@ class Storage3D:
         self.path = state_dct["storage3d"]["path"]
         self.curve = state_dct["storage3d"]["curve"]
         for ind, node in state_dct["storage3d"]["nodes"].items():
-            node_point = NodePoint(node["pos_3d"], node["def_pos"], node["node_index"], node["cs_scene"], window=window)
+            node_point = NodePoint(np.array(node["pos_3d"]), np.array(node["def_pos"]), int(node["node_index"]), node["cs_scene"], window=window)
             self.scene.addItem(node_point)
             node_point.rotate_projection(self.R)
             ref_point = node_point.get_ref_point()
             theta = node_point.get_cs_angle()
             cs_transform = node_point.get_cs_transform()
-            self.nodes[node["node_index"]] = [node_point, node["def_pos"], None, None, node_point.get_cs_scene(), ref_point, theta, cs_transform]
+            self.nodes[int(node["node_index"])] = [node_point, np.array(node["def_pos"]), None, None, node_point.get_cs_scene(), ref_point, theta, cs_transform]
         for _, node in state_dct["storage3d"]["nodes"].items():
-            if node["prev_node"]:
-                self.nodes[node["node_index"]][2] = self.nodes[node["prev_node"]][0]
-                self.nodes[node["node_index"]][0].set_prev_node(self.nodes[node["prev_node"]][0])
-            if node["next_node"]:
-                self.nodes[node["node_index"]][3] = self.nodes[node["next_node"]][0]
-                self.nodes[node["node_index"]][0].set_next_node(self.nodes[node["next_node"]][0])
+            if node["prev_node"] is not None:
+                self.nodes[int(node["node_index"])][2] = self.nodes[int(node["prev_node"])][0]
+                self.nodes[int(node["node_index"])][0].set_prev_node(self.nodes[int(node["prev_node"])][0])
+            if node["next_node"] is not None:
+                self.nodes[int(node["node_index"])][3] = self.nodes[int(node["next_node"])][0]
+                self.nodes[int(node["node_index"])][0].set_next_node(self.nodes[int(node["next_node"])][0])
         for ind, points in state_dct["storage3d"]["path_lines"].items():
             self.add_path_line(self.nodes[points[0]][0], self.nodes[points[1]][0])
         self.interpolate()
@@ -432,9 +432,9 @@ class Storage3D:
             self.nodes[node_index][0] = new_node
         for node_index, node_point in self.nodes.items():
             if node_point[2] is not None:
-                node_point[0].set_prev_node(self.nodes[node_point[2]][0])
+                node_point[0].set_prev_node(self.nodes[node_point[2].get_node_index()][0])
             if node_point[3] is not None:
-                node_point[0].set_next_node(self.nodes[node_point[3]][0])
+                node_point[0].set_next_node(self.nodes[node_point[3].get_node_index()][0])
 
     def restore_path(self):
         for point_indices, path_line in self.path_lines.items():

@@ -565,6 +565,9 @@ class MainWindow(QMainWindow):
     def set_seed(self, value):
         random.seed(int(value))
 
+    def reset_seed(self):
+        random.seed(int(self.parameters["seed"]))
+
     def init_settings_window(self):
         self.settings_window.setWindowTitle("User Settings")
         self.settings_window.setMinimumWidth(400)
@@ -814,7 +817,7 @@ class MainWindow(QMainWindow):
             helix_dct["stap_colors"] = []
             helix_dct["scaf_colors"] = []
             json_dct["vstrands"].append(helix_dct)
-        return json_dct 
+        return json_dct
 
     @Slot(bool)
     def write_tool_action(self, checked):
@@ -889,6 +892,8 @@ class MainWindow(QMainWindow):
                 state_dct["storage3d"]["nodes"] = self.dump_nodes(storage3d)
                 state_dct["storage3d"]["path_lines"] = self.dump_path_lines(storage3d)
                 state_dct["parameters"] = self.parameters
+                rand_state = random.getstate()
+                state_dct["random_state"] = [rand_state[0], list(rand_state[1]), rand_state[2]]
                 json.dump(state_dct, f)
 
     @staticmethod
@@ -914,6 +919,8 @@ class MainWindow(QMainWindow):
                 self.parameters = state_dct["parameters"]
                 self.settings_window = QWidget()
                 self.init_settings_window()
+                self.reset_seed()
+                random.setstate((state_dct["random_state"][0], tuple(state_dct["random_state"][1]), state_dct["random_state"][2]))
                 self.scene.get_storage().load_state(state_dct, self)
 
     @staticmethod
