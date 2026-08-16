@@ -33,13 +33,10 @@ class PathCurve(QGraphicsItem):
         self.helix_curves = self.construct_helix_curves()
         self.construct_helix_splines(self.t, self.P_x, self.P_y, self.P_z)
         self.target_angles = self.solve_target_angles()
-        self.helix_painting_points, self.mod_maps, self.twist_maps, self.twist_maps_num = self.solve_mods(self.P_x, self.P_y, self.P_z, self.t, self.scene.parent().get_parameters()["rho_start"])
+        self.helix_painting_points, self.mod_maps, self.twist_maps, self.twist_maps_num = self.solve_mods(self.P_x, self.P_y, self.P_z, self.t)
 
     def get_hknots(self):
         return self.helix_knots
-
-    def update_mods(self, rho):
-        self.helix_painting_points, self.mod_maps, self.twist_maps, self.twist_maps_num = self.solve_mods(self.P_x, self.P_y, self.P_z, self.t, rho)
 
     def solve_target_angles(self):
         target_angles = []
@@ -210,7 +207,7 @@ class PathCurve(QGraphicsItem):
                         ref_N_ij = N_ij
                         ref_B_ij = B_ij
                     R = th[k][1] / 10
-                    theta = th[k][2]
+                    theta = (-1)*th[k][2]
                     h = S_ij + R * np.cos(theta) * N_ij + R * np.sin(theta) * B_ij
                     xh.append(h[0])
                     yh.append(h[1])
@@ -413,7 +410,7 @@ class PathCurve(QGraphicsItem):
                        A[2] * A[2] * (1 - np.cos(theta)) + np.cos(theta)]])
         return R
 
-    def solve_mods(self, P_x, P_y, P_z, t, rho=0):
+    def solve_mods(self, P_x, P_y, P_z, t):
         accumulated_mod_counts = {}
         mod_maps = {}
         twist_maps = {}
@@ -530,8 +527,8 @@ class PathCurve(QGraphicsItem):
                     row = self.target_angles[sorted(helix_lengths).index(helix_1)]
                     element = row[sorted(helix_lengths).index(helix_2)]
                     neighbours = element[0]
-                    target_h1 = element[1]
-                    target_h2 = element[2]
+                    target_h1 = 2*np.pi - element[1]
+                    target_h2 = 2*np.pi - element[2]
                     delta_1 = np.abs(length_1 * rad_nm - target_h1)
                     delta_2 = np.abs(length_2 * rad_nm - target_h2)
                     if neighbours:
@@ -646,8 +643,8 @@ class PathCurve(QGraphicsItem):
         scene_positions = np.matmul(self.R,
                                     self.painting_points + np.repeat(self.translation, len(self.painting_points[0, :]),
                                                                      axis=1))
-        return QRectF(QPointF(np.min(scene_positions[0, :]), np.min(scene_positions[2, :])),
-                      QPointF(np.max(scene_positions[0, :]), np.max(scene_positions[2, :])))
+        return QRectF(QPointF(np.min(scene_positions[0, :]), (-1)*np.min(scene_positions[2, :])),
+                      QPointF(np.max(scene_positions[0, :]), (-1)*np.max(scene_positions[2, :])))
 
     def paint(self, painter, option, widget=...):
         painter.scale(2, 2)
@@ -662,10 +659,10 @@ class PathCurve(QGraphicsItem):
         font = QFont()
         font.setPixelSize(1)
         start_point = np.matmul(self.R, self.painting_points[:, 0] + self.translation[:, 0])
-        path = QPainterPath(QPointF(float(start_point[0]), float(start_point[2])))
+        path = QPainterPath(QPointF(float(start_point[0]), (-1)*float(start_point[2])))
         for i in range(1, len(self.painting_points[0, :])):
             next_point = np.matmul(self.R, self.painting_points[:, i] + self.translation[:, 0])
-            path.lineTo(float(next_point[0]), float(next_point[2]))
+            path.lineTo(float(next_point[0]), (-1)*float(next_point[2]))
         painter.setPen(pen_1)
         painter.drawPath(path)
         for helix, knot_lst in self.helix_knots.items():
@@ -674,7 +671,7 @@ class PathCurve(QGraphicsItem):
                 knot = np.array([knot_lst[0][i], knot_lst[1][i], knot_lst[2][i]])
                 knot_point = np.matmul(self.R, knot + self.translation[:, 0])
                 text_path = QPainterPath()
-                text_path.addText(float(knot_point[0]), float(knot_point[2]), font,
+                text_path.addText(float(knot_point[0]), (-1)*float(knot_point[2]), font,
                                   "{:d}".format(helix))
                 painter.drawPath(text_path)
                 painter.fillPath(text_path, QBrush(Qt.GlobalColor.black))
@@ -695,4 +692,4 @@ class PathCurve(QGraphicsItem):
                     elif not skip:
                         painter.setPen(pen_2)
                         painter.setBrush(QBrush(Qt.GlobalColor.black))
-                    painter.drawEllipse(QPointF(float(next_point[0]), float(next_point[2])), 0.1, 0.1)
+                    painter.drawEllipse(QPointF(float(next_point[0]), (-1)*float(next_point[2])), 0.1, 0.1)

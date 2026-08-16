@@ -28,7 +28,7 @@ class GridPoint(QGraphicsItem):
     def rotate_projection(self, R):
         self.R = np.matmul(R, self.R)
         scene_pos = np.matmul(self.R, self.pos_3d)
-        self.setPos(scene_pos[0], scene_pos[2])
+        self.setPos(scene_pos[0], (-1)*scene_pos[2])
 
     def remove_grid_line(self, grid_line):
         self.grid_lines.remove(grid_line)
@@ -65,7 +65,7 @@ class GridPoint(QGraphicsItem):
 
     def boundingRect(self):
         scene_pos = np.matmul(self.R, self.pos_3d)
-        return QRectF(scene_pos[0] - 1, scene_pos[2] - 1, 2, 2)
+        return QRectF(scene_pos[0] - 1, (-1)*scene_pos[2] - 1, 2, 2)
 
     def paint(self, painter, option, widget=...):
         cutoff = 20
@@ -84,7 +84,7 @@ class GridPoint(QGraphicsItem):
                 brush = QBrush(QColor(int((d / cutoff) * 255), int((d / cutoff) * 255), int((d / cutoff) * 255)), Qt.BrushStyle.SolidPattern)
             painter.setPen(QPen(Qt.PenStyle.NoPen))
             path = QPainterPath()
-            path.addRoundedRect(QRectF(scene_pos[0] - 0.2, scene_pos[2] - 0.2, 0.4, 0.4), 0.2, 0.2)
+            path.addRoundedRect(QRectF(scene_pos[0] - 0.2, (-1)*scene_pos[2] - 0.2, 0.4, 0.4), 0.2, 0.2)
             painter.drawPath(path)
             painter.fillPath(path, brush)
 
@@ -97,4 +97,4 @@ class GridPoint(QGraphicsItem):
     def set_pos_3d(self, array):
         self.pos_3d = array
         scene_pos = np.matmul(self.R, self.pos_3d)
-        self.setPos(scene_pos[0], scene_pos[2])
+        self.setPos(scene_pos[0], (-1)*scene_pos[2])

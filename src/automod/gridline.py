@@ -38,7 +38,9 @@ class GridLine(QGraphicsItem):
     def boundingRect(self):
         w = 20
         p1 = self.point_1.get_scene_pos_3d()
+        p1[2] = (-1)*p1[2]
         p2 = self.point_2.get_scene_pos_3d()
+        p2[2] = (-1)*p2[2]
         if p1[0] <= p2[0]:
             left_x = p1[0]
         else:
@@ -56,7 +58,9 @@ class GridLine(QGraphicsItem):
         fade = self.scene().parent().get_parameters()['gs']
         cutoff = 4 * self.scene().parent().get_parameters()['gs']
         p1 = self.point_1.get_scene_pos_3d()
+        p1[2] = (-1)*p1[2]
         p2 = self.point_2.get_scene_pos_3d()
+        p2[2] = (-1)*p2[2]
         start = QPointF(p1[0], p1[2])
         stop = QPointF(p2[0], p2[2])
         d = np.array([p2[0] - p1[0], p2[2] - p1[2]])

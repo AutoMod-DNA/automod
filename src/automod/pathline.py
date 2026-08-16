@@ -12,11 +12,14 @@ class PathLine(QGraphicsItem):
         self.setVisible(True)
         self.point_1 = point_1
         self.point_2 = point_2
+        
 
     def boundingRect(self):
         w = 20
         p1 = self.point_1.get_scene_pos_3d()
+        p1[2] = (-1)*p1[2]
         p2 = self.point_2.get_scene_pos_3d()
+        p2[2] = (-1)*p2[2]
         if p1[0] <= p2[0]:
             left_x = p1[0]
         else:
@@ -33,8 +36,8 @@ class PathLine(QGraphicsItem):
     def paint(self, painter, option, widget=...):
         p1 = self.point_1.get_scene_pos_3d()
         p2 = self.point_2.get_scene_pos_3d()
-        p1 = np.array([p1[0], p1[2]])
-        p2 = np.array([p2[0], p2[2]])
+        p1 = np.array([p1[0], (-1)*p1[2]])
+        p2 = np.array([p2[0], (-1)*p2[2]])
         d_unit = (p2 - p1) / np.linalg.norm(p2 - p1)
         d_norm = self.gram_schmidt_2d(d_unit)
 

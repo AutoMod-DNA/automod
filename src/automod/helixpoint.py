@@ -11,6 +11,13 @@ class ReferencePoint(QGraphicsItem):
         self.setPos(scene_x, scene_y)
         self.radius = radius
 
+    def dump(self):
+        dct = {}
+        dct["scene_x"] = self.x()
+        dct["scene_y"] = self.y()
+        dct["radius"] = self.radius
+        return dct
+
     def get_radius(self):
         return self.radius
 
@@ -60,6 +67,17 @@ class HelixPoint(QGraphicsItem):
         self.lattice_type = lattice_type
         self.recalc_pos()
 
+    def dump(self):
+        dct = {}
+        dct["x_ind"] = self.x_ind
+        dct["y_ind"] = self.y_ind
+        dct["lattice_type"] = self.lattice_type
+        dct["number"] = self.number
+        dct["set_number"] = self.set_number
+        dct["count"] = self.count
+        dct["selected"] = self.selected
+        return dct
+
     def recalc_pos(self):
         if self.lattice_type == 1:
             rd = (self.window.get_parameters()['hd'] * 10) / 2 + (self.window.get_parameters()['ihg'] * 10) / 2
@@ -105,6 +123,9 @@ class HelixPoint(QGraphicsItem):
     def set_count(self, count):
         self.count = count
 
+    def set_selected(self, value):
+        self.selected = value
+
     def enable_editing(self):
         self.editable = True
 
@@ -125,6 +146,9 @@ class HelixPoint(QGraphicsItem):
 
     def set_pure_number(self, number):
         self.number = number
+
+    def set_set_number(self, set_number):
+        self.set_number = set_number
 
     def get_pure_number(self):
         return self.number
@@ -175,6 +199,12 @@ class HelixPoint(QGraphicsItem):
     def reduce_number(self):
         self.number -= 2
 
+    def refresh_text(self):
+        if self.set_number is None:
+            self.text.setPlainText("{:d}".format(self.number))
+        else:
+            self.text.setPlainText("{:d}".format(self.set_number))
+
     def boundingRect(self):
         return QRectF(self.x() - 2*self.radius, self.y() - 2*self.radius, 4*self.radius, 4*self.radius)
 
@@ -219,10 +249,7 @@ class HelixPoint(QGraphicsItem):
                     self.number = self.count * 2 + 1
                 else:
                     self.number = self.count * 2
-                if self.set_number is None:
-                    self.text.setPlainText("{:d}".format(self.number))
-                else:
-                    self.text.setPlainText("{:d}".format(self.set_number))
+                self.refresh_text()
                 for item in self.scene().items():
                     if isinstance(item, HelixPoint):
                         if (self.is_odd() and item.is_odd()) or (not self.is_odd() and not item.is_odd()):

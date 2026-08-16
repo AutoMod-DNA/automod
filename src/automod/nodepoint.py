@@ -10,7 +10,7 @@ from automod.helixpoint import ReferencePoint, HelixPoint
 class NodePoint(QGraphicsItem):
 
     def __init__(self, pos_3d, def_pos, node_index,
-                 old_scene=None, ref_point=None, theta=None, transform=None, lattice_type=None, parent=None):
+                 old_scene=None, ref_point=None, theta=None, transform=None, lattice_type=None, parent=None, window=None):
         super().__init__(parent)
         self.pos_3d = pos_3d
         self.def_pos = def_pos
@@ -21,19 +21,72 @@ class NodePoint(QGraphicsItem):
         self.prev_node = None
         self.next_node = None
         self.curve = False
-        if old_scene is None:
+        if not old_scene:
             self.cs_scene = QGraphicsScene()
             self.cs_scene.setBackgroundBrush(QBrush(Qt.GlobalColor.white))
             self.ref_point = None
             self.cs_angle = 0
             self.cs_transform = None
             self.lattice_type = None
+        elif isinstance(old_scene, dict):
+            self.cs_scene = QGraphicsScene()
+            self.cs_scene.setBackgroundBrush(QBrush(Qt.GlobalColor.white))
+            self.cs_angle = old_scene["cs_angle"]
+            self.cs_transform = QTransform(old_scene["cs_transform"][0][0], old_scene["cs_transform"][0][1], old_scene["cs_transform"][0][2],
+                                           old_scene["cs_transform"][1][0], old_scene["cs_transform"][1][1], old_scene["cs_transform"][1][2],
+                                           old_scene["cs_transform"][2][0], old_scene["cs_transform"][2][1], old_scene["cs_transform"][2][2])
+            self.lattice_type = old_scene["lattice_type"]
+            self.ref_point = ReferencePoint(old_scene["ref_point"]["scene_x"], old_scene["ref_point"]["scene_y"], old_scene["ref_point"]["radius"])
+            self.cs_scene.addItem(self.ref_point)
+            for helix in old_scene["helices"]:
+                hp = HelixPoint(self.ref_point, helix["x_ind"], helix["y_ind"], window, helix["lattice_type"])
+                hp.set_count(helix["count"])
+                hp.set_pure_number(helix["number"])
+                hp.set_set_number(helix["set_number"])
+                hp.refresh_text()
+                hp.set_selected(helix["selected"])
+                self.cs_scene.addItem(hp)
         else:
             self.cs_scene = old_scene
             self.ref_point = ref_point
             self.cs_angle = theta
             self.cs_transform = transform
             self.lattice_type = lattice_type
+
+    def dump(self):
+        dct = {}
+        dct["pos_3d"] = self.pos_3d.tolist()
+        dct["def_pos"] = self.def_pos.tolist()
+        dct["node_index"] = self.node_index
+        dct["R"] = self.R.tolist()
+        if self.cs_scene:
+            dct["cs_scene"] = self.cs_scene_dump()
+        else:
+            dct["cs_scene"] = None
+        if self.prev_node:
+            dct["prev_node"] = self.prev_node.get_node_index()
+        else:
+            dct["prev_node"] = None
+        if self.next_node:
+            dct["next_node"] = self.next_node.get_node_index()
+        else:
+            dct["next_node"] = None
+        return dct
+
+    def cs_scene_dump(self):
+        cs_dct = {}
+        cs_dct["cs_angle"] = self.cs_angle
+        cs_dct["cs_transform"] = np.array([[self.cs_transform.m11(), self.cs_transform.m12(), self.cs_transform.m13()],
+                                           [self.cs_transform.m21(), self.cs_transform.m22(), self.cs_transform.m23()],
+                                           [self.cs_transform.m31(), self.cs_transform.m32(), self.cs_transform.m33()]]).tolist()
+        cs_dct["lattice_type"] = self.lattice_type
+        cs_dct["helices"] = []
+        for item in self.cs_scene.items():
+            if isinstance(item, HelixPoint):
+                cs_dct["helices"].append(item.dump())
+            elif isinstance(item, ReferencePoint):
+                cs_dct["ref_point"] = item.dump()
+        return cs_dct
 
     def set_lattice_type(self, type_number):
         self.lattice_type = type_number
@@ -156,12 +209,12 @@ class NodePoint(QGraphicsItem):
     def rotate_projection(self, R):
         self.R = np.matmul(R, self.R)
         scene_pos = np.matmul(self.R, self.pos_3d)
-        self.setPos(scene_pos[0], scene_pos[2])
+        self.setPos(scene_pos[0], (-1)*scene_pos[2])
 
     def set_pos_3d(self, array):
         self.pos_3d = array
         scene_pos = np.matmul(self.R, self.pos_3d)
-        self.setPos(scene_pos[0], scene_pos[2])
+        self.setPos(scene_pos[0], (-1)*scene_pos[2])
 
     def get_pos_3d(self):
         return self.pos_3d
@@ -180,7 +233,7 @@ class NodePoint(QGraphicsItem):
 
     def boundingRect(self):
         scene_pos = np.matmul(self.R, self.pos_3d)
-        return QRectF(scene_pos[0] - 2, scene_pos[2] - 2, 4, 4)
+        return QRectF(scene_pos[0] - 2, (-1)*scene_pos[2] - 2, 4, 4)
 
     def mousePressEvent(self, event):
         if event.buttons() == Qt.MouseButton.LeftButton:
@@ -204,6 +257,6 @@ class NodePoint(QGraphicsItem):
             painter.setPen(QPen(QColor(150, 150, 255)))
             self.scene().parent().update_point_value(self.def_pos)
         path = QPainterPath()
-        path.addRoundedRect(QRectF(scene_pos[0] - 1, scene_pos[2] - 1, 2, 2), 2, 2)
+        path.addRoundedRect(QRectF(scene_pos[0] - 1, (-1)*scene_pos[2] - 1, 2, 2), 2, 2)
         painter.drawPath(path)
         painter.fillPath(path, painter.brush())

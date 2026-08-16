@@ -13,6 +13,7 @@ from automod.curveview import CurveView
 from automod.csview import CSView
 from automod.nodepoint import NodePoint
 from automod.helixpoint import HelixPoint, ReferencePoint
+from automod.gridpoint import GridPoint
 
 import automod.icons
 
@@ -298,7 +299,7 @@ class MainWindow(QMainWindow):
         self.disconnect_next.setIconText("Disconnect next")
         self.connection_tools.addAction(self.disconnect_next)
 
-        ''' CROSS SECTION TOOL '''
+        ''' CROSS SECTION TOOLS '''
 
         cs_tool = QDockWidget("Cross section tool")
         cs_tool.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
@@ -429,15 +430,30 @@ class MainWindow(QMainWindow):
         cs_paste.clicked.connect(self.paste_cs_action)
         self.cs_toolbar.addWidget(cs_paste)
 
+        ''' DROP DOWN MENU TOOLS '''
+
         menu_bar = QMenuBar(None)
         main_menu = QMenu("AutoMod")
+        
         user_settings = QAction("User Settings", self)
         user_settings.triggered.connect(self.set_settings_action)
         main_menu.addAction(user_settings)
+        
         export_hnodes = QAction("Export Helix Nodes", self)
         export_hnodes.triggered.connect(self.export_tool_action)
         self.export_tool = export_hnodes
         main_menu.addAction(export_hnodes)
+
+        save_state = QAction("Save Internal State", self)
+        save_state.triggered.connect(self.save_state_action)
+        self.save_state_tool = save_state
+        main_menu.addAction(save_state)
+
+        load_state = QAction("Load Internal State", self)
+        load_state.triggered.connect(self.load_state_action)
+        self.load_state_tool = load_state
+        main_menu.addAction(load_state)
+        
         menu_bar.addMenu(main_menu)
 
         self.setMenuBar(menu_bar)
@@ -854,7 +870,51 @@ class MainWindow(QMainWindow):
                     for h, nodes in hnodes.items():
                         f.write("{}\n".format(int(h)))
                         for i in range(len(nodes[0])):
-                            f.write("{}, {}, {}\n".format(nodes[0][i], nodes[1][i], nodes[2][i]))                       
+                            f.write("{}, {}, {}\n".format(nodes[0][i], nodes[1][i], nodes[2][i]))
+
+    @Slot(bool)
+    def save_state_action(self):
+        file_name = QFileDialog.getSaveFileName(self, caption="Save to file", filter="JSON files (*.json)")
+        if not file_name[0] == ' ':
+            with open(file_name[0] + ".json", "w", encoding="utf-8") as f:
+                state_dct = {}
+                storage3d = self.scene.get_storage() 
+                state_dct["storage3d"] = {}
+                state_dct["storage3d"]["R"] = storage3d.get_R().tolist()
+                state_dct["storage3d"]["origin"] = storage3d.get_origin().tolist()
+                state_dct["storage3d"]["local_origin"] = storage3d.get_local_origin().tolist()
+                state_dct["storage3d"]["node_index"] = storage3d.get_node_index()
+                state_dct["storage3d"]["path"] = storage3d.has_path()
+                state_dct["storage3d"]["curve"] = storage3d.has_curve()
+                state_dct["storage3d"]["nodes"] = self.dump_nodes(storage3d)
+                state_dct["storage3d"]["path_lines"] = self.dump_path_lines(storage3d)
+                state_dct["parameters"] = self.parameters
+                json.dump(state_dct, f)
+
+    @staticmethod
+    def dump_nodes(storage):
+        dct = {}
+        for (ind, node) in storage.get_nodes().items():
+            dct[ind] = node[0].dump()
+        return dct
+
+    @staticmethod
+    def dump_path_lines(storage):
+        dct = {}
+        for i, (inds, line) in enumerate(storage.get_path_lines().items()):
+            dct[i] = [inds[0], inds[1]]
+        return dct
+
+    @Slot(bool)
+    def load_state_action(self):
+        file_name = QFileDialog.getOpenFileName(self, caption="Load from file", filter="JSON files (*.json)")
+        if not file_name[0] == ' ':
+            with open(file_name[0], 'r', encoding="utf-8") as f:
+                state_dct = json.load(f)
+                self.parameters = state_dct["parameters"]
+                self.settings_window = QWidget()
+                self.init_settings_window()
+                self.scene.get_storage().load_state(state_dct, self)
 
     @staticmethod
     def find_next_crossover(helices, adjacency_check, mods, curve, max_tol, margin_over, min_d, twist_dict, new_twist_dict, co_counts_matrix, rho_target):
