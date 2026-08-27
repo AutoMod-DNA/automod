@@ -76,9 +76,12 @@ class NodePoint(QGraphicsItem):
     def cs_scene_dump(self):
         cs_dct = {}
         cs_dct["cs_angle"] = self.cs_angle
-        cs_dct["cs_transform"] = np.array([[self.cs_transform.m11(), self.cs_transform.m12(), self.cs_transform.m13()],
-                                           [self.cs_transform.m21(), self.cs_transform.m22(), self.cs_transform.m23()],
-                                           [self.cs_transform.m31(), self.cs_transform.m32(), self.cs_transform.m33()]]).tolist()
+        if self.cs_transform:
+            cs_dct["cs_transform"] = np.array([[self.cs_transform.m11(), self.cs_transform.m12(), self.cs_transform.m13()],
+                                               [self.cs_transform.m21(), self.cs_transform.m22(), self.cs_transform.m23()],
+                                               [self.cs_transform.m31(), self.cs_transform.m32(), self.cs_transform.m33()]]).tolist()
+        else:
+            cs_dct["cs_transform"] = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]).tolist()
         cs_dct["lattice_type"] = self.lattice_type
         cs_dct["helices"] = []
         for item in self.cs_scene.items():
