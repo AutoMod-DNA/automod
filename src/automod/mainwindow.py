@@ -13,7 +13,6 @@ from automod.curveview import CurveView
 from automod.csview import CSView
 from automod.nodepoint import NodePoint
 from automod.helixpoint import HelixPoint, ReferencePoint
-from automod.gridpoint import GridPoint
 
 import automod.icons
 
@@ -299,7 +298,7 @@ class MainWindow(QMainWindow):
         self.disconnect_next.setIconText("Disconnect next")
         self.connection_tools.addAction(self.disconnect_next)
 
-        ''' CROSS SECTION TOOLS '''
+        ''' CROSS SECTION TOOL '''
 
         cs_tool = QDockWidget("Cross section tool")
         cs_tool.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
@@ -817,7 +816,7 @@ class MainWindow(QMainWindow):
             helix_dct["stap_colors"] = []
             helix_dct["scaf_colors"] = []
             json_dct["vstrands"].append(helix_dct)
-        return json_dct
+        return json_dct 
 
     @Slot(bool)
     def write_tool_action(self, checked):
@@ -878,7 +877,7 @@ class MainWindow(QMainWindow):
     @Slot(bool)
     def save_state_action(self):
         file_name = QFileDialog.getSaveFileName(self, caption="Save to file", filter="JSON files (*.json)")
-        if not file_name[0] == ' ':
+        if not file_name[0] == '':
             with open(file_name[0] + ".json", "w", encoding="utf-8") as f:
                 state_dct = {}
                 storage3d = self.scene.get_storage() 
@@ -892,6 +891,7 @@ class MainWindow(QMainWindow):
                 state_dct["storage3d"]["nodes"] = self.dump_nodes(storage3d)
                 state_dct["storage3d"]["path_lines"] = self.dump_path_lines(storage3d)
                 state_dct["parameters"] = self.parameters
+                state_dct["lattice"] = self.lattice
                 rand_state = random.getstate()
                 state_dct["random_state"] = [rand_state[0], list(rand_state[1]), rand_state[2]]
                 json.dump(state_dct, f)
@@ -913,10 +913,11 @@ class MainWindow(QMainWindow):
     @Slot(bool)
     def load_state_action(self):
         file_name = QFileDialog.getOpenFileName(self, caption="Load from file", filter="JSON files (*.json)")
-        if not file_name[0] == ' ':
+        if not file_name[0] == '':
             with open(file_name[0], 'r', encoding="utf-8") as f:
                 state_dct = json.load(f)
                 self.parameters = state_dct["parameters"]
+                self.lattice = state_dct["lattice"]
                 self.settings_window = QWidget()
                 self.init_settings_window()
                 self.reset_seed()

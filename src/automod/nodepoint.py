@@ -209,12 +209,12 @@ class NodePoint(QGraphicsItem):
     def rotate_projection(self, R):
         self.R = np.matmul(R, self.R)
         scene_pos = np.matmul(self.R, self.pos_3d)
-        self.setPos(scene_pos[0], (-1)*scene_pos[2])
+        self.setPos(scene_pos[0], scene_pos[2])
 
     def set_pos_3d(self, array):
         self.pos_3d = array
         scene_pos = np.matmul(self.R, self.pos_3d)
-        self.setPos(scene_pos[0], (-1)*scene_pos[2])
+        self.setPos(scene_pos[0], scene_pos[2])
 
     def get_pos_3d(self):
         return self.pos_3d
@@ -233,7 +233,7 @@ class NodePoint(QGraphicsItem):
 
     def boundingRect(self):
         scene_pos = np.matmul(self.R, self.pos_3d)
-        return QRectF(scene_pos[0] - 2, (-1)*scene_pos[2] - 2, 4, 4)
+        return QRectF(scene_pos[0] - 2, scene_pos[2] - 2, 4, 4)
 
     def mousePressEvent(self, event):
         if event.buttons() == Qt.MouseButton.LeftButton:
@@ -257,6 +257,6 @@ class NodePoint(QGraphicsItem):
             painter.setPen(QPen(QColor(150, 150, 255)))
             self.scene().parent().update_point_value(self.def_pos)
         path = QPainterPath()
-        path.addRoundedRect(QRectF(scene_pos[0] - 1, (-1)*scene_pos[2] - 1, 2, 2), 2, 2)
+        path.addRoundedRect(QRectF(scene_pos[0] - 1, scene_pos[2] - 1, 2, 2), 2, 2)
         painter.drawPath(path)
         painter.fillPath(path, painter.brush())

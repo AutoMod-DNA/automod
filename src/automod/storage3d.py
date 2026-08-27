@@ -185,7 +185,6 @@ class Storage3D:
                 line.hide()
             self.path = False
             self.curve = True
-        self.scene.update()
 
     def rotate_all_points(self, R):
         self.R = np.matmul(R, self.R)
@@ -195,7 +194,7 @@ class Storage3D:
         self.scene.update()
 
     def translate_all_points(self, dx, dy, dz):
-        translation = np.array([dx, dy, -dz])
+        translation = np.array([dx, dy, dz])
         for item in self.scene.items():
             if isinstance(item, GridPoint):
                 item.set_pos_3d(item.get_pos_3d() + translation)
@@ -203,11 +202,11 @@ class Storage3D:
                 item.set_pos_3d(item.get_pos_3d() + translation)
                 self.nodes[item.get_node_index()][1] = item.get_pos_3d()
             if isinstance(item, PathCurve):
-                item.translate(dx, dy, -dz)
-        self.translate_origin(dx, dy, -dz)
+                item.translate(dx, dy, dz)
+        self.translate_origin(dx, dy, dz)
 
     def translate_node(self, dx, dy, dz):
-        translation = np.array([dx, dy, -dz])
+        translation = np.array([dx, dy, dz])
         for item in self.scene.items():
             if isinstance(item, NodePoint) and item.has_selection():
                 item.set_pos_3d(item.get_pos_3d() + translation)
@@ -314,7 +313,7 @@ class Storage3D:
         self.rotate_all_points(np.linalg.inv(self.R))
 
     def translate_to_default(self):
-        self.translate_all_points(-self.origin[0], -self.origin[1], +self.origin[2])
+        self.translate_all_points(-self.origin[0], -self.origin[1], -self.origin[2])
         self.delete_grid()
         self.create_grid()
         self.restore_nodes()
@@ -351,21 +350,21 @@ class Storage3D:
     def get_node_at(self, scene_pos):
         for node_index, node_point in self.nodes.items():
             d_2d = np.sqrt((scene_pos.x() - node_point[0].get_scene_pos_3d()[0]) ** 2 + (
-                    scene_pos.y() - (-1)*node_point[0].get_scene_pos_3d()[2]) ** 2)
+                    scene_pos.y() - node_point[0].get_scene_pos_3d()[2]) ** 2)
             if d_2d <= 3/4:
                 return node_point[0]
 
     def has_node_at(self, scene_pos):
         for node_index, node_point in self.nodes.items():
             d_2d = np.sqrt((scene_pos.x() - node_point[0].get_scene_pos_3d()[0]) ** 2 + (
-                    scene_pos.y() - (-1)*node_point[0].get_scene_pos_3d()[2]) ** 2)
+                    scene_pos.y() - node_point[0].get_scene_pos_3d()[2]) ** 2)
             if d_2d <= 3/4:
                 return True
         else:
             return False
 
     def add_node_point(self, scene_pos):
-        scene_pos = np.array([scene_pos.x(), self.local_origin[1], -scene_pos.y()])
+        scene_pos = np.array([scene_pos.x(), self.local_origin[1], scene_pos.y()])
         closest_grid_point = [None, 0, 0]
 
         for def_pos, grid_point in self.points.items():
@@ -432,9 +431,9 @@ class Storage3D:
             self.nodes[node_index][0] = new_node
         for node_index, node_point in self.nodes.items():
             if node_point[2] is not None:
-                node_point[0].set_prev_node(self.nodes[node_point[2].get_node_index()][0])
+                node_point[0].set_prev_node(self.nodes[node_point[2]][0])
             if node_point[3] is not None:
-                node_point[0].set_next_node(self.nodes[node_point[3].get_node_index()][0])
+                node_point[0].set_next_node(self.nodes[node_point[3]][0])
 
     def restore_path(self):
         for point_indices, path_line in self.path_lines.items():

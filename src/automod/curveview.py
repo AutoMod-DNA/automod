@@ -57,7 +57,7 @@ class CurveView(QGraphicsView):
     def init_rotation(self):
         R = self.rotation_matrix_x(0.05)
         self.scene.get_storage().rotate_all_points(R)
-        R = self.rotation_matrix_z(-0.05)
+        R = self.rotation_matrix_z(0.05)
         self.scene.get_storage().rotate_all_points(R)
 
     def init_fit(self):
